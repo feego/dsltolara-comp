@@ -26,7 +26,7 @@ public class Converter {
 			break;
 		case "Use":
 			if (node.val != null)
-				return "use " + node.val + ";\n";
+				return "call " + node.val + ";\n";
 			break;
 		case "SetFixed":
 			ArrayList<String> lhs = nodeChildrenToStringArray((SimpleNode) node
@@ -35,8 +35,10 @@ public class Converter {
 					.jjtGetChild(1));
 
 			fixedDeclared = true;
-			fixedDeclaration = "{" + lhs.get(0) + "=" + lhs.get(1) + ", "
-					+ rhs.get(0) + "=" + rhs.get(1) + "}";
+			fixedDeclaration = "{" + lhs.get(0).toLowerCase() + "="
+					+ lhs.get(1).toLowerCase() + ", "
+					+ rhs.get(0).toLowerCase() + "=" + rhs.get(1).toLowerCase()
+					+ "}";
 			return "var fixed = \"" + fixedDeclaration + "\";\n";
 		case "TypeDef":
 			SimpleNode child = (SimpleNode) node.jjtGetChild(0);
@@ -94,9 +96,10 @@ public class Converter {
 		}
 
 		if (code != "")
-			if (ruleDeclaration)
+			if (ruleDeclaration) {
+				tempVars.clear();
 				return code + "end\n\n";
-			else
+			} else
 				return code;
 		else
 			return "";
@@ -155,8 +158,12 @@ public class Converter {
 		SimpleNode iterListNode = (SimpleNode) node.jjtGetChild(1);
 
 		if (iterListNode.val != null) {
-			// TODO
-			// System.out.println(iterListNode.val);
+			ArrayList<String> list = tempVars.get(iterListNode.val);
+
+			if (list != null) {
+				return processForEachList(iter, list,
+						(SimpleNode) node.jjtGetChild(2), selectors);
+			}
 		} else {
 			SimpleNode iterId = (SimpleNode) iterListNode.jjtGetChild(0);
 
@@ -200,33 +207,36 @@ public class Converter {
 			ArrayList<String> colonsList, ArrayList<String> list,
 			SimpleNode body, ArrayList<String> selectors) {
 		String code = "";
+		colonsList.addAll(list);
 
 		for (String colons : colonsList) {
 			for (String equals : equalsList) {
 				if ((colons.equals("") && colonsList.size() > 1)
 						|| equals.equals("") && equalsList.size() > 1)
 					continue;
+				
+				code += "select ";
+				String selectorsStr = concatSelectors(selectors);
+				if (selectorsStr.length() > 0)
+					code += selectorsStr + ".";
 
 				switch (iter.get(0)) {
 				case "Key":
-
+					code += ((selector.equals("Function")) ? (selector.toLowerCase() + processElem(equals)
+							+ ".") : ("")) + processKey(colons) + " end\napply\n"
+							+ processBody(body, colons) + "end\n\n";
 					break;
-				case "Tag":
-
+				case "Tag":					
+					code += ((selector.equals("Function")) ? (selector.toLowerCase() + processElem(equals)
+							+ ".") : ("")) + "section" + processElem(colons) + " end\napply\n"
+							+ processBody(body, colons) + "end\n\n";
 					break;
 				case "Var":
-
-					code += "select ";
-
-					String selectorsStr = concatSelectors(selectors);
-					if (selectorsStr.length() > 0)
-						code += selectorsStr + ".";
-					code += selector.toLowerCase() + processElem(equals)
-							+ ".var" + processElem(colons) + " end\napply\n"
+					code += ((selector.equals("Function")) ? (selector.toLowerCase() + processElem(equals)
+							+ ".") : ("")) + "var" + processElem(colons) + " end\napply\n"
 							+ processBody(body, colons) + "end\n\n";
 					break;
 				}
-
 			}
 		}
 		return code;
@@ -243,23 +253,23 @@ public class Converter {
 		String selectorsStr = concatSelectors(selectors);
 
 		for (String elem : iterlist) {
+			code += "select ";
+			if (selectorsStr.length() > 0)
+				code += selectorsStr + ".";
+			
 			switch (iter.get(0)) {
 			case "Key":
-				code += "select ";
-
-				if (selectorsStr.length() > 0)
-					code += selectorsStr + ".";
 				code += processKey(elem) + " end\napply\n"
 						+ processBody(body, processInnerKey(elem)) + "end\n\n";
 				break;
 			case "Tag":
-				code += "select ";
-				if (selectorsStr.length() > 0)
-					code += selectorsStr + ".";
+				
 				code += "section{'" + elem + "'} end\napply\n"
 						+ processBody(body, processInnerKey(elem)) + "end\n\n";
 				break;
 			case "Var":
+				code += "var{'" + elem + "'} end\napply\n"
+						+ processBody(body, "") + "end\n\n";
 				break;
 			}
 		}
@@ -383,7 +393,13 @@ public class Converter {
 					return parseQuotedArg(n.val, iter);
 				else {
 					SimpleNode child = (SimpleNode) n.jjtGetChild(0);
-					return processParams(child, iter);
+					String code = processParams(child, iter);
+
+					if (n.jjtGetNumChildren() > 1) {
+						child = (SimpleNode) n.jjtGetChild(1);
+						code += ": " + parseQuotedArg(child.val, iter);
+					}
+					return code;
 				}
 			default:
 				return n.toString();
@@ -410,15 +426,28 @@ public class Converter {
 			case "Identifier":
 				code += params.get(0);
 				break;
-			default:
+			case "Key":
 				String iter = elem;
-				if (iter.equals("")) {
+				if (iter.equals(""))
 					iter = "var.name";
-				}
+
 				if (params.size() > 1)
 					code += "[[$" + iter + "." + params.get(1) + "]]";
 				else
 					code += "[[$" + iter + "]]";
+				break;
+			case "Var":
+				iter = elem;
+				if (iter.equals(""))
+					iter = "var.name";
+
+				if (params.size() > 1)
+					code += "[[$" + iter + "." + params.get(1) + "]]";
+				else
+					code += "[[$" + iter + "]]";
+				break;
+			default:
+				code += elem;
 				break;
 			}
 			break;
@@ -431,21 +460,5 @@ public class Converter {
 			break;
 		}
 		return code;
-	}
-
-	public String getInsertInfo(SimpleNode node) {
-		switch (node.toString()) {
-		case "Args":
-
-		}
-
-		for (int i = 0; i < node.jjtGetNumChildren(); ++i) {
-			SimpleNode n = (SimpleNode) node.jjtGetChild(i);
-			if (n != null) {
-				getInsertInfo(n);
-			}
-		}
-
-		return "";
 	}
 }
