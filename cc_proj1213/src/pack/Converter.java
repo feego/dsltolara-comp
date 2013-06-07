@@ -14,12 +14,14 @@ public class Converter {
 
 	public String doConversion(SimpleNode node, ArrayList<String> selectors) {
 		String code = "";
+		boolean ruleDeclaration = false;
 
 		switch (node.toString()) {
 		case "ForEachStatement":
-			return getForEachInfo(node);
+			return getForEachInfo(node, selectors);
 		case "Rule":
 			fixedDeclared = false;
+			ruleDeclaration = true;
 			code += "aspectdef " + node.val + "\n";
 			break;
 		case "Use":
@@ -54,9 +56,7 @@ public class Converter {
 			params = nodeChildrenToStringArray(node);
 			child = (SimpleNode) node.jjtGetChild(0);
 			if (child.val != null) {
-				if (params.get(0).equals("type")) {
-					return code + "type = " + params.get(1) + ";\n";
-				} else {
+				if (!params.get(0).equals("type")) {
 					tempVars.put(params.get(0),
 							nodeChildrenToStringArray((SimpleNode) node
 									.jjtGetChild(1)));
@@ -74,7 +74,15 @@ public class Converter {
 
 			return code;
 		case "Do":
-			code += selectors;
+			String body = processBody(node, "");
+
+			if (!body.equals("")) {
+				code += "select ";
+				code += concatSelectors(selectors);
+				code += " end\napply\n";
+				code += body;
+				code += "end\n";
+			}
 			break;
 		}
 
@@ -86,9 +94,21 @@ public class Converter {
 		}
 
 		if (code != "")
-			return code + "end\n\n";
+			if (ruleDeclaration)
+				return code + "end\n\n";
+			else
+				return code;
 		else
 			return "";
+	}
+
+	private String concatSelectors(ArrayList<String> selectors) {
+		String code = "";
+		if (selectors.size() > 0)
+			code += selectors.get(0);
+		for (int i = 1; i < selectors.size(); i++)
+			code += "." + selectors.get(i);
+		return code;
 	}
 
 	private String parseWithSelector(SimpleNode node) {
@@ -97,16 +117,19 @@ public class Converter {
 		switch (firstChild.toString()) {
 		case "Statement":
 			return "statement{'" + firstChild.val + "'}";
-		}
-		return null;
-	}
+		case "Var":
+			String selector = "var{";
+			ArrayList<String> vararray = nodeChildrenToStringArray(firstChild);
 
-	private String processWith(SimpleNode node) {
-		SimpleNode firstChild = (SimpleNode) node.jjtGetChild(0);
-
-		switch (firstChild.toString()) {
-		case "Statement":
-
+			if (vararray.size() > 0)
+				selector += "'" + vararray.get(0) + "'";
+			for (int i = 0; i < vararray.size() - 1; i++) {
+				selector += ",'" + vararray.get(i) + "'";
+			}
+			selector += "}";
+			return selector;
+		case "Function":
+			return "function{name==\"" + firstChild.val + "\"}";
 		}
 		return null;
 	}
@@ -126,7 +149,7 @@ public class Converter {
 		return array;
 	}
 
-	public String getForEachInfo(SimpleNode node) {
+	public String getForEachInfo(SimpleNode node, ArrayList<String> selectors) {
 		ArrayList<String> iter = nodeChildrenToStringArray((SimpleNode) node
 				.jjtGetChild(0));
 		SimpleNode iterListNode = (SimpleNode) node.jjtGetChild(1);
@@ -162,11 +185,11 @@ public class Converter {
 				list.add(0, "");
 				return processForEachProgFunc(iterId.toString(), iter,
 						equalsList, colonsList, list,
-						(SimpleNode) node.jjtGetChild(2));
+						(SimpleNode) node.jjtGetChild(2), selectors);
 			} else if (iterId.toString() == "List") {
 				return processForEachList(iter,
 						nodeChildrenToStringArray(iterId),
-						(SimpleNode) node.jjtGetChild(2));
+						(SimpleNode) node.jjtGetChild(2), selectors);
 			}
 		}
 		return "";
@@ -175,7 +198,7 @@ public class Converter {
 	private String processForEachProgFunc(String selector,
 			ArrayList<String> iter, ArrayList<String> equalsList,
 			ArrayList<String> colonsList, ArrayList<String> list,
-			SimpleNode body) {
+			SimpleNode body, ArrayList<String> selectors) {
 		String code = "";
 
 		for (String colons : colonsList) {
@@ -193,9 +216,13 @@ public class Converter {
 					break;
 				case "Var":
 
-					code += "select " + selector.toLowerCase()
-							+ processElem(equals) + ".var"
-							+ processElem(colons) + " end\napply\n"
+					code += "select ";
+
+					String selectorsStr = concatSelectors(selectors);
+					if (selectorsStr.length() > 0)
+						code += selectorsStr + ".";
+					code += selector.toLowerCase() + processElem(equals)
+							+ ".var" + processElem(colons) + " end\napply\n"
 							+ processBody(body, colons) + "end\n\n";
 					break;
 				}
@@ -210,17 +237,26 @@ public class Converter {
 	}
 
 	private String processForEachList(ArrayList<String> iter,
-			ArrayList<String> iterlist, SimpleNode body) {
+			ArrayList<String> iterlist, SimpleNode body,
+			ArrayList<String> selectors) {
 		String code = "";
+		String selectorsStr = concatSelectors(selectors);
 
 		for (String elem : iterlist) {
 			switch (iter.get(0)) {
 			case "Key":
-				code += "select " + processKey(elem) + " end\napply\n"
+				code += "select ";
+
+				if (selectorsStr.length() > 0)
+					code += selectorsStr + ".";
+				code += processKey(elem) + " end\napply\n"
 						+ processBody(body, processInnerKey(elem)) + "end\n\n";
 				break;
 			case "Tag":
-				code += "select section{'" + elem + "'} end\napply\n"
+				code += "select ";
+				if (selectorsStr.length() > 0)
+					code += selectorsStr + ".";
+				code += "section{'" + elem + "'} end\napply\n"
 						+ processBody(body, processInnerKey(elem)) + "end\n\n";
 				break;
 			case "Var":
@@ -268,6 +304,29 @@ public class Converter {
 						+ processInsertBody((SimpleNode) n.jjtGetChild(1), elem)
 						+ "}%;\n";
 				break;
+			case "Set":
+				code += "def ";
+
+				ArrayList<String> params = nodeChildrenToStringArray(n);
+				if (params.get(1).equals("Rhs"))
+					params.set(
+							1,
+							"\""
+									+ ((SimpleNode) ((SimpleNode) n
+											.jjtGetChild(1)).jjtGetChild(0))
+											.toString().toLowerCase() + "\"");
+				System.out.println(params);
+				SimpleNode child = (SimpleNode) n.jjtGetChild(0);
+
+				if (child.val != null)
+					if (params.get(0).equals("type")) {
+						return code + "type = " + params.get(1) + ";\n";
+					}
+				break;
+			case "Decompose":
+				child = (SimpleNode) n.jjtGetChild(0);
+				code += "decompose(" + child.val + ");\n";
+				break;
 			}
 		}
 		return code;
@@ -280,7 +339,7 @@ public class Converter {
 		switch (n.toString()) {
 		case "Assignment":
 			code = processParams((SimpleNode) n.jjtGetChild(0), iter) + " = "
-					+ processParams((SimpleNode) n.jjtGetChild(1), iter);
+					+ processParams((SimpleNode) n.jjtGetChild(1), iter) + ";";
 			break;
 		default:
 			code = processInsertingLine(n, iter);
