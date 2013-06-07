@@ -61,45 +61,44 @@ public interface DSL_LARATreeConstants
   public int JJTOP = 55;
   public int JJTASSIGNMENT = 56;
   public int JJTMETHOD = 57;
-  public int JJTSCREEN = 58;
+  public int JJTARG = 58;
   public int JJTFILEID = 59;
   public int JJTQUOTED = 60;
   public int JJTFILE = 61;
   public int JJTPRINT = 62;
   public int JJTWARNING = 63;
-  public int JJTARG = 64;
+  public int JJTIDENTIFIER = 64;
   public int JJTPARAM = 65;
-  public int JJTIDENTIFIER = 66;
-  public int JJTINT8 = 67;
-  public int JJTINT16 = 68;
-  public int JJTINT32 = 69;
-  public int JJTUINT8 = 70;
-  public int JJTUINT16 = 71;
-  public int JJTUINT32 = 72;
-  public int JJTCHAR = 73;
-  public int JJTBOOL = 74;
-  public int JJTDOUBLE = 75;
-  public int JJTSINGLE = 76;
-  public int JJTFLOAT = 77;
-  public int JJTINT = 78;
-  public int JJTIF = 79;
-  public int JJTELSE = 80;
-  public int JJTOR = 81;
-  public int JJTAND = 82;
-  public int JJTXOR = 83;
-  public int JJTMUL = 84;
-  public int JJTSUM = 85;
-  public int JJTSUB = 86;
-  public int JJTOVERFLOW = 87;
-  public int JJTROUND = 88;
-  public int JJTWRAP = 89;
-  public int JJTFLOOR = 90;
-  public int JJTDEPENDENTSTMT = 91;
-  public int JJTOPSCONFIGRULES = 92;
-  public int JJTDECOMPOSE = 93;
-  public int JJTFIXED = 94;
-  public int JJTMAX = 95;
-  public int JJTMIN = 96;
+  public int JJTINT8 = 66;
+  public int JJTINT16 = 67;
+  public int JJTINT32 = 68;
+  public int JJTUINT8 = 69;
+  public int JJTUINT16 = 70;
+  public int JJTUINT32 = 71;
+  public int JJTCHAR = 72;
+  public int JJTBOOL = 73;
+  public int JJTDOUBLE = 74;
+  public int JJTSINGLE = 75;
+  public int JJTFLOAT = 76;
+  public int JJTINT = 77;
+  public int JJTIF = 78;
+  public int JJTELSE = 79;
+  public int JJTOR = 80;
+  public int JJTAND = 81;
+  public int JJTXOR = 82;
+  public int JJTMUL = 83;
+  public int JJTSUM = 84;
+  public int JJTSUB = 85;
+  public int JJTOVERFLOW = 86;
+  public int JJTROUND = 87;
+  public int JJTWRAP = 88;
+  public int JJTFLOOR = 89;
+  public int JJTDEPENDENTSTMT = 90;
+  public int JJTOPSCONFIGRULES = 91;
+  public int JJTDECOMPOSE = 92;
+  public int JJTFIXED = 93;
+  public int JJTMAX = 94;
+  public int JJTMIN = 95;
 
 
   public String[] jjtNodeName = {
@@ -161,15 +160,14 @@ public interface DSL_LARATreeConstants
     "Op",
     "Assignment",
     "Method",
-    "Screen",
+    "Arg",
     "FileId",
     "Quoted",
     "File",
     "Print",
     "Warning",
-    "Arg",
-    "Param",
     "Identifier",
+    "Param",
     "Int8",
     "Int16",
     "Int32",
@@ -202,4 +200,4 @@ public interface DSL_LARATreeConstants
     "Min",
   };
 }
-/* JavaCC - OriginalChecksum=8eacb2aa034dfa091313abec70239ab1 (do not edit this line) */
+/* JavaCC - OriginalChecksum=40ff0e2f88bc9d0f88feee598315ba70 (do not edit this line) */

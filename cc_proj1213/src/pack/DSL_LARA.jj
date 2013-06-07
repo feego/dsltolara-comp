@@ -4,7 +4,8 @@
  */options{  static = true;}PARSER_BEGIN(DSL_LARA)package pack;import java.util.ArrayList;import java.util.HashMap;public class DSL_LARA/*@bgen(jjtree)*/implements DSL_LARATreeConstants/*@egen*/{/*@bgen(jjtree)*/
   protected static JJTDSL_LARAState jjtree = new JJTDSL_LARAState();
 
-/*@egen*/  public static void main(String args []) throws ParseException  {    DSL_LARA myConverter = new DSL_LARA(System.in);    SimpleNode root = myConverter.Start();    //root.dump("");    myConverter.createSymbolTable(root);    myConverter.doSemanticAnalysis();  }  SymbolTable symbolTable = new SymbolTable();  /*
+/*@egen*/  public static void main(String args []) throws ParseException  {    DSL_LARA myConverter = new DSL_LARA(System.in);    SimpleNode root = myConverter.Start();    //root.dump("");    //myConverter.createSymbolTable(root);    //myConverter.doSemanticAnalysis();
+    System.out.println(new Converter().doConversion(root));  }  SymbolTable symbolTable = new SymbolTable();  /*
    * Variables used to create the symbol table
    */  String parsingRule = "";  boolean parsingSetType = false;  boolean parsingSet = false;  boolean parsingForEachStatement = false;  boolean parsingIter = false;  boolean parsingTag = false;  ArrayList < ArrayList < String >> forEachStatements = new ArrayList < ArrayList < String >> ();  ArrayList < ArrayList < String >> forEachUsedVars = new ArrayList < ArrayList < String >> ();  int forDepth = 0;  void doSemanticAnalysis()  {    for (String rule : symbolTable.getApplyList())    {      if (!symbolTable.containsRule(rule))      {        System.out.println(" ! Rule '" + rule + "' was applied and not declared");      }    }    for (String rule : symbolTable.getUseList())    {      if (!symbolTable.containsRule(rule))      {        System.out.println(" ! Rule '" + rule + "' was used and not declared");      }    }    HashMap < String, RuleSymbolTable > ruleMap = symbolTable.getRules();    for (String rule : ruleMap.keySet())    {
       /*
@@ -20,7 +21,7 @@
           System.out.println(" ! TypeDef '" + typedef + "' was not declared on rule '" + rule + "'");
         }
       }
-	  /* ArrayList<ArrayList <String >> statement : ruleMap.get(rule).getForEachsUsedVars()
+	  /*
        * Vars in ForEach statements
        */
 
@@ -145,7 +146,8 @@
       jjtree.closeNodeScope(jjtn001, true);
     }
   }
-/*@egen*/      }void Statement()       :{}{  ForEachStatement()| Insert()| Set()| WithStatement() //Diogo pergunta: deixamos os nomes destes statements, mudamos os nomes ou tiramos e pomos s\u00f3 statement gen\u00e9rico??? }void InjectCode()              :{/*@bgen(jjtree) IfStatement */
+/*@egen*/      }void Statement()       :{}{  ForEachStatement()| Insert()| Set()| WithStatement()
+}void InjectCode()              :{/*@bgen(jjtree) IfStatement */
   SimpleNode jjtn000 = new SimpleNode(JJTIFSTATEMENT);
   boolean jjtc000 = true;
   jjtree.openNodeScope(jjtn000);
@@ -1519,7 +1521,7 @@ try {
     jjtree.openNodeScope(jjtn006);
   }
   try {
-/*@egen*/  (    Param()    {      jjtn006.val = t.image;    }    "="    (      (        < IDENTIFIER > Param()        {          jjtn006.val = t.image;        }        s = Op() t = < NUMBER >/*@bgen(jjtree) Number */
+/*@egen*/  (    Param(t)    "="    (      (        t = < IDENTIFIER > Param(t)        {          jjtn006.val = t.image;        }        s = Op() t = < NUMBER >/*@bgen(jjtree) Number */
         {
           SimpleNode jjtn003 = new SimpleNode(JJTNUMBER);
           boolean jjtc003 = true;
@@ -1611,20 +1613,26 @@ try {
     jjtree.closeNodeScope(jjtn007,  argCounter);
   }
 }
-/*@egen*/                   )| < PRINT > "("{  argCounter = 2;}(/*@bgen(jjtree) Screen */
+/*@egen*/                   )| < PRINT > "("{  argCounter = 2;}(  < SCREEN >/*@bgen(jjtree) Arg */
   {
-    SimpleNode jjtn008 = new SimpleNode(JJTSCREEN);
+    SimpleNode jjtn008 = new SimpleNode(JJTARG);
     boolean jjtc008 = true;
     jjtree.openNodeScope(jjtn008);
   }
   try {
-/*@egen*/  < SCREEN >/*@bgen(jjtree)*/
+/*@egen*//*@bgen(jjtree)*/
+  {
+    jjtree.closeNodeScope(jjtn008, true);
+    jjtc008 = false;
+  }
+/*@egen*/  {	jjtn008.val = "screen";
+  }/*@bgen(jjtree)*/
   } finally {
     if (jjtc008) {
       jjtree.closeNodeScope(jjtn008, true);
     }
   }
-/*@egen*/        |/*@bgen(jjtree) #File( 1) */
+/*@egen*/     |/*@bgen(jjtree) #File( 1) */
   {
     SimpleNode jjtn013 = new SimpleNode(JJTFILE);
     boolean jjtc013 = true;
@@ -1735,7 +1743,7 @@ try {
     jjtree.closeNodeScope(jjtn015, true);
   }
 }
-/*@egen*/        }void Arg()       :{  Token t;}{  t = < NUMBER >/*@bgen(jjtree) Arg */
+/*@egen*/        }void Arg()       :{  Token t = null;}{  t = < NUMBER >/*@bgen(jjtree) Arg */
   {
     SimpleNode jjtn001 = new SimpleNode(JJTARG);
     boolean jjtc001 = true;
@@ -1753,34 +1761,34 @@ try {
       jjtree.closeNodeScope(jjtn001, true);
     }
   }
-/*@egen*/      | < IDENTIFIER >/*@bgen(jjtree) Arg */
-                 {
-                   SimpleNode jjtn002 = new SimpleNode(JJTARG);
-                   boolean jjtc002 = true;
-                   jjtree.openNodeScope(jjtn002);
-                 }
-                 try {
-/*@egen*/ (Param())?/*@bgen(jjtree)*/
-                 } catch (Throwable jjte002) {
-                   if (jjtc002) {
-                     jjtree.clearNodeScope(jjtn002);
-                     jjtc002 = false;
-                   } else {
-                     jjtree.popNode();
-                   }
-                   if (jjte002 instanceof RuntimeException) {
-                     throw (RuntimeException)jjte002;
-                   }
-                   if (jjte002 instanceof ParseException) {
-                     throw (ParseException)jjte002;
-                   }
-                   throw (Error)jjte002;
-                 } finally {
-                   if (jjtc002) {
-                     jjtree.closeNodeScope(jjtn002, true);
-                   }
-                 }
-/*@egen*/    | t = < QUOTED > (Param() ":" < QUOTED >)?/*@bgen(jjtree) Arg */
+/*@egen*/      | t = < IDENTIFIER >/*@bgen(jjtree) Arg */
+                     {
+                       SimpleNode jjtn002 = new SimpleNode(JJTARG);
+                       boolean jjtc002 = true;
+                       jjtree.openNodeScope(jjtn002);
+                     }
+                     try {
+/*@egen*/ (Param(t))?/*@bgen(jjtree)*/
+                     } catch (Throwable jjte002) {
+                       if (jjtc002) {
+                         jjtree.clearNodeScope(jjtn002);
+                         jjtc002 = false;
+                       } else {
+                         jjtree.popNode();
+                       }
+                       if (jjte002 instanceof RuntimeException) {
+                         throw (RuntimeException)jjte002;
+                       }
+                       if (jjte002 instanceof ParseException) {
+                         throw (ParseException)jjte002;
+                       }
+                       throw (Error)jjte002;
+                     } finally {
+                       if (jjtc002) {
+                         jjtree.closeNodeScope(jjtn002, true);
+                       }
+                     }
+/*@egen*/    | t = < QUOTED > (Param(t) ":" < QUOTED >)?/*@bgen(jjtree) Arg */
 {
   SimpleNode jjtn003 = new SimpleNode(JJTARG);
   boolean jjtc003 = true;
@@ -1798,7 +1806,7 @@ try {
     jjtree.closeNodeScope(jjtn003, true);
   }
 }
-/*@egen*/    | Param(){  int counter = 1;}/*@bgen(jjtree) #Arg( counter) */
+/*@egen*/    | Param(t){  int counter = 1;}/*@bgen(jjtree) #Arg( counter) */
 {
   SimpleNode jjtn005 = new SimpleNode(JJTARG);
   boolean jjtc005 = true;
@@ -1829,7 +1837,7 @@ try {
     jjtree.closeNodeScope(jjtn005,  counter);
   }
 }
-/*@egen*/              | "\'" Param(){  counter = 1;}(":" t = < QUOTED >/*@bgen(jjtree) Colons */
+/*@egen*/              | "\'" Param(t){  counter = 1;}(":" t = < QUOTED >/*@bgen(jjtree) Colons */
 {
   SimpleNode jjtn006 = new SimpleNode(JJTCOLONS);
   boolean jjtc006 = true;
@@ -1860,13 +1868,8 @@ try {
               jjtree.closeNodeScope(jjtn007,  counter);
             }
           }
-/*@egen*/              }void Param() :{/*@bgen(jjtree) Param */
-  SimpleNode jjtn000 = new SimpleNode(JJTPARAM);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-/*@egen*/  Token t1, t2 = null;}{/*@bgen(jjtree) Param */
-  try {
-/*@egen*/  "<"  (/*@bgen(jjtree) Key */
+/*@egen*/              }void Param(Token s)       :{  Token t1, t2 = null;}{{	int number = 1;
+}  (    "<"  (/*@bgen(jjtree) Key */
     {
       SimpleNode jjtn001 = new SimpleNode(JJTKEY);
       boolean jjtc001 = true;
@@ -1922,19 +1925,34 @@ try {
     jjtree.closeNodeScope(jjtn004, true);
     jjtc004 = false;
   }
-/*@egen*/  {    jjtn004.val = t2.image;  }/*@bgen(jjtree)*/
+/*@egen*/  {    jjtn004.val = t2.image;
+    number++;  }/*@bgen(jjtree)*/
   } finally {
     if (jjtc004) {
       jjtree.closeNodeScope(jjtn004, true);
     }
   }
-/*@egen*/      )? ">"/*@bgen(jjtree)*/
+/*@egen*/      )? ">"
+  )/*@bgen(jjtree) #Param( number) */
+  {
+    SimpleNode jjtn005 = new SimpleNode(JJTPARAM);
+    boolean jjtc005 = true;
+    jjtree.openNodeScope(jjtn005);
+  }
+  try {
+/*@egen*//*@bgen(jjtree)*/
+  {
+    jjtree.closeNodeScope(jjtn005,  number);
+    jjtc005 = false;
+  }
+/*@egen*/  {	if (s != null) jjtn005.val = s.image;
+  }/*@bgen(jjtree)*/
   } finally {
-    if (jjtc000) {
-      jjtree.closeNodeScope(jjtn000, true);
+    if (jjtc005) {
+      jjtree.closeNodeScope(jjtn005,  number);
     }
   }
-/*@egen*/}Token Op()       :{  Token t;}{  t = "+"  {    return t;  }| t = "-"  {    return t;  }}void Types()       :{}{/*@bgen(jjtree) Int8 */
+/*@egen*/               }Token Op()       :{  Token t;}{  t = "+"  {    return t;  }| t = "-"  {    return t;  }}void Types()       :{}{/*@bgen(jjtree) Int8 */
   {
     SimpleNode jjtn001 = new SimpleNode(JJTINT8);
     boolean jjtc001 = true;
